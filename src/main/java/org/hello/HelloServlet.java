@@ -1,7 +1,6 @@
 package org.hello;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -23,16 +22,23 @@ public class HelloServlet extends HttpServlet {
 	private final String JDBC_PASSWORD = "kenneth";
 
 	// SQL
-	private final String SELECT_EARTHQUAKE_SIMPLE = "SELECT * FROM EARTHQUAKE order by EARTHQUAKE_ID LIMIT ?";
+	private final String SELECT_EARTHQUAKE_SIMPLE = "SELECT * FROM EARTHQUAKE where EARTHQUAKE_ID = ?";
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+
+		int earthquakeId = 0;
+		try {
+			earthquakeId = Integer.parseInt(request.getParameter("earthquake_id"));
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+
+		int rowCount = 0;
 
 		Connection conn = null;
 
 		Boolean canConnectDB = false;
-
-		int rowCount = 0;
 
 		try {
 			Class.forName(JDBC_DRIVER);
@@ -42,7 +48,7 @@ public class HelloServlet extends HttpServlet {
 			canConnectDB = true;
 
 			PreparedStatement pre = conn.prepareStatement(SELECT_EARTHQUAKE_SIMPLE);
-			pre.setInt(1, 9);
+			pre.setInt(1, earthquakeId);
 
 			ResultSet rs = pre.executeQuery();
 
@@ -67,15 +73,11 @@ public class HelloServlet extends HttpServlet {
 			}
 		}
 
-		response.setContentType("text/html");
-		PrintWriter out = response.getWriter();
-		try {
-			out.println("<h1>DB SQL Result</h1>");
-			out.println("<p>Result row count: " + rowCount + "</p>");
-			out.println("<footer>DB status: " + canConnectDB + "</footer>");
-		} finally {
-			out.close();
-		}
+		request.setAttribute("canConnectDB", canConnectDB);
+		request.setAttribute("result_row_count", rowCount);
+
+		getServletContext().getRequestDispatcher("/result.jsp").forward(request, response);
+
 	}
 
 }
