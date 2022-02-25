@@ -1,8 +1,11 @@
 package org.hello;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.servlet.ServletException;
@@ -19,6 +22,9 @@ public class HelloServlet extends HttpServlet {
 	private final String JDBC_USERNAME = "kenneth";
 	private final String JDBC_PASSWORD = "kenneth";
 
+	// SQL
+	private final String SELECT_EARTHQUAKE_SIMPLE = "SELECT * FROM EARTHQUAKE order by EARTHQUAKE_ID LIMIT ?";
+
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
@@ -26,17 +32,30 @@ public class HelloServlet extends HttpServlet {
 
 		Boolean canConnectDB = false;
 
+		int rowCount = 0;
+
 		try {
 			Class.forName(JDBC_DRIVER);
 
 			conn = DriverManager.getConnection(JDBC_URL, JDBC_USERNAME, JDBC_PASSWORD);
 
 			canConnectDB = true;
+
+			PreparedStatement pre = conn.prepareStatement(SELECT_EARTHQUAKE_SIMPLE);
+			pre.setInt(1, 9);
+
+			ResultSet rs = pre.executeQuery();
+
+			while (rs.next()) {
+				rowCount++;
+			}
+
+			rs.close();
 		} catch (SQLException e) {
-			System.out.println("Fail to Connect!");
+			System.out.println("SQL Error!!!\n");
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			System.out.println("No Driver found!");
+			System.out.println("No Driver found!\n");
 			e.printStackTrace();
 		} finally {
 			if (conn != null) {
@@ -48,8 +67,15 @@ public class HelloServlet extends HttpServlet {
 			}
 		}
 
-		response.getWriter().append("Connect to DB status: " + canConnectDB + ".  The Context Path is: ")
-				.append(request.getContextPath());
+		response.setContentType("text/html");
+		PrintWriter out = response.getWriter();
+		try {
+			out.println("<h1>DB SQL Result</h1>");
+			out.println("<p>Result row count: " + rowCount + "</p>");
+			out.println("<footer>DB status: " + canConnectDB + "</footer>");
+		} finally {
+			out.close();
+		}
 	}
 
 }
