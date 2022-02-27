@@ -36,18 +36,23 @@ public class HelloServlet extends HttpServlet {
 
 		int rowCount = 0;
 
-		Connection conn = null;
+		// Connection conn = null;
 
 		Boolean canConnectDB = false;
 
+		// Register JDBC driver
 		try {
 			Class.forName(JDBC_DRIVER);
+		} catch (ClassNotFoundException e) {
+			System.out.println("No Driver found!\n");
+			e.printStackTrace();
+		}
 
-			conn = DriverManager.getConnection(JDBC_URL, JDBC_USERNAME, JDBC_PASSWORD);
+		try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USERNAME, JDBC_PASSWORD);
+				PreparedStatement pre = conn.prepareStatement(SELECT_EARTHQUAKE_SIMPLE)) {
 
 			canConnectDB = true;
 
-			PreparedStatement pre = conn.prepareStatement(SELECT_EARTHQUAKE_SIMPLE);
 			pre.setInt(1, earthquakeId);
 
 			ResultSet rs = pre.executeQuery();
@@ -56,21 +61,9 @@ public class HelloServlet extends HttpServlet {
 				rowCount++;
 			}
 
-			rs.close();
 		} catch (SQLException e) {
 			System.out.println("SQL Error!!!\n");
 			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			System.out.println("No Driver found!\n");
-			e.printStackTrace();
-		} finally {
-			if (conn != null) {
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
 		}
 
 		request.setAttribute("canConnectDB", canConnectDB);
